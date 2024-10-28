@@ -1,0 +1,881 @@
+---
+title: "Modelo analítico para la predicción del precio de las computadoras portátiles a partir de algunas características"
+author: "Estefanía Valencia Gil, Estefanía Gil Tejada, Angela Camila Galvis Carballo"
+format: html
+editor: visual
+---
+
+```{r, echo=FALSE}
+Datos <- read.csv("D:/Desktop/Semestre 2024-2/Regresión/Proyecto Computadores/Trabajo computadores/Datos.csv")
+```
+
+## Pregunta Principal
+
+¿Cómo afectan las características técnicas y de diseño de un computador portátil al precio final del producto?
+
+## Preguntas Auxiliares
+
+1.  ¿Cuáles son las características de diseño que más influyen en el precio de los computadores portátiles?
+
+2.  ¿Cuáles son las características técnicas que más influyen en el precio de los computadores portátiles?
+
+## Objetivo General
+
+Realizar un modelo de regresión lineal múltiple que permita realizar predicciones futuras del precio de los computadores portátiles a partir de sus características técnicas y de diseño.
+
+## Objetivos Específicos
+
+1.  Analizar el impacto de las variables cualitativas que más influyen sobre el precio de los computadores portátiles.
+
+2.  Evaluar la influencia que tienen las especificaciones técnicas en la definición del precio de los computadores portátiles.
+
+## Introducción
+
+Este informe tiene como objetivo analizar las principales características que podrían influir en el precio de las computadoras portátiles, proporcionando una base informativa para quienes desean tomar decisiones de compra bien fundamentadas. Sin embargo, y dado el análisis de la base de datos disponible, no se encontró un modelo predictivo efectivo que relacione las características de estos dispositivos con su precio.
+
+### Clasificación de las Variables Inicialmente
+
+Elegimos las variables de acuerdo a nuestro criterio de lo que son variables cuantitativas y cualitativas, según las unidades que tenían las variables en la base de datos:
+
+**Variables Cuantitativas:**
+
+-   Weight
+
+-   Battery Life
+
+-   Price
+
+-   RAM
+
+-   Storage
+
+-   Screen Size
+
+-   Warranty.
+
+**Variables Cualitativas:**
+
+-   Brand
+
+-   Model
+
+-   Processor
+
+-   Graphics Card
+
+-   Operating System.
+
+Luego de la clasificación, procedimos a analizar gráficamente la relación que tenían las variables cuantitativas con la variable "Price" (Precio de los computadores portátiles).
+
+![](Imagen%202.jpeg)
+
+De acuerdo al gráfico que nos muestra la relación que tienen las variables cuantitativas con la variable precio, notamos un comportamiento anormal en algunas de ellas, pues, los puntos están dispersos verticalmente, lo que nos lleva a concluir que sería mejor tomarlas como variables cualitativas.
+
+En ese orden de ideas, la clasificación final de las variables quedó de la siguiente manera:
+
+| Variables        | Tipo         |
+|------------------|--------------|
+| Brand            | Cualitativa  |
+| Model            | Cualitativa  |
+| Prosessor        | Cualitativa  |
+| RAM              | Cualitativa  |
+| Storage          | Cualitativa  |
+| Screen size      | Cualitativa  |
+| Graphics car     | Cualitativa  |
+| Operating Sistem | Cualitativa  |
+| Weigth           | Cuantitativa |
+| Battery life     | Cuantitativa |
+| Price            | Cuantitativa |
+| Warranty         | Cuantitativa |
+
+### Análisis Exploratorio
+
+Para iniciar con el análisis exploratorio, convertimos las variables cualitativas a factor, con el objetivo de poder operar con ellas. Después, generamos el summary y el gráfico de toda la base de datos, obteniendo los siguientes resultados:
+
+```{r, echo=FALSE}
+#Llamamos a las librerías necesarias
+library(GGally)
+library(graphics)
+library(car)
+library(ggplot2)
+```
+
+```{r, echo=FALSE}
+Datos$Brand <- as.factor(Datos$Brand)
+Datos$Model <- as.factor(Datos$Model)
+Datos$Processor <- as.factor(Datos$Processor)
+Datos$Graphics_Card <- as.factor(Datos$Graphics_Card)
+Datos$Operating_System <- as.factor(Datos$Operating_System)
+Datos$RAM <- as.factor(Datos$RAM)
+Datos$Storage <- as.factor(Datos$Storage)
+Datos$Screen_Size <- as.factor(Datos$Screen_Size)
+Datos$Warranty <- as.factor(Datos$Warranty)
+summary(Datos)
+```
+
+```{r, , echo=FALSE}
+pairs(Datos)
+```
+
+De la información anterior podemos observar que el modelo cuenta con 11 variables explicativas que nos indican las características que podrían influir en el cambio del precio de cada computador portátil, siendo el precio la variable número 12 del modelo, a la cual llamaremos **variable respuesta**. Para las otras variables tenemos que:
+
+-   **Marca**: Esta variable tiene 7 categorías (Dell, Asus, HP, Acer, Lenovo, MSI, y Other), siendo "Dell" y "Other" las categorías con el mayor número de PCs.
+
+-   **Modelo**: Esta variable se asemeja a un número de identificación único, similar a una cédula, ya que cada valor es diferente para cada PC. Por este motivo, no la incluiremos en nuestro Modelo de Regresión Lineal (MRL).
+
+-   **Procesador**: Se clasifica en 5 categorías (AMD Ryzen 5, AMD Ryzen 7, AMD Ryzen 9, Intel i5, Intel i7, Intel i9). La categoría "AMD Ryzen 7" es la que tiene el mayor número de PCs, mientras que "Intel i7" es la que tiene menor cantidad.
+
+-   **Memoria RAM**: Tiene 4 categorías (8, 16, 32 y 64 GB). La categoría "32 GB" es la que presenta el mayor número de PCs, mientras que "8 GB" es la que tiene menos unidades.
+
+-   **Almacenamiento**: Se divide en 4 categorías: 256, 512, 1024 y 2048 GB. La categoría de "512 GB" tiene el mayor número de PCs (796), mientras que "256 GB" tiene la menor cantidad (727).
+
+-   **Tamaño de Pantalla**: Incluye 4 categorías: 13.3", 14.0", 15.6", y 17.0". La categoría de "13.3" tiene el mayor número de PCs (819), mientras que "17.0" es la que cuenta con menos unidades (713).
+
+-   **Tarjeta Gráfica**: Se agrupa en 5 categorías: AMD Radeon, Intel UHD, NVIDIA GTX 1650, NVIDIA RTX 3060 y NVIDIA RTX 3070. "AMD Radeon" es la categoría con más PCs (634), y "NVIDIA RTX 3060" la que tiene menos (568).
+
+-   **Sistema Operativo**: Cuenta con 4 categorías: Linux, macOS, Windows 10 y Windows 11. Linux es la categoría con mayor número de PCs (759), mientras que Windows 10 es la que tiene menos unidades (727).
+
+-   **Peso**: Es una variable continua que varía entre 1.000 kg y 3.500 kg.
+
+-   **Duración de Batería**: También es una variable continua y varía entre 3 y 15 horas.
+
+-   **Garantía**: Se clasifica en 3 categorías: 1 año, 2 años y 3 años. La categoría de "1 año" tiene el mayor número de PCs (1103), mientras que "3 años" tiene la menor cantidad (969).
+
+Además, del gráfico podemos concluir que no se observa una relación clara ni una tendencia evidente entre las variables analizadas. Esto sugiere la necesidad de realizar un análisis más profundo para entender las posibles interacciones o patrones subyacentes que podrían estar ocultos a simple vista en esta visualización inicial.
+
+### Análisis del modelo lm con todas las variable
+
+A partir del modelo lm del precio vs todas las variables, observamos que el modelo no explica adecuadamente el comportamiento de las variables, ya que la variable "Model" no es interpretable en términos estadísticos, pues actúa como un identificador único de cada computador portátil, similar a una cédula.
+
+Para rectificar la información proporcionada por el resumen del modelo, generamos el gráfico de la variable Precio vs la variable Modelo.
+
+```{r, echo=FALSE}
+boxplot(Datos$Price ~ Datos$Model)
+```
+
+A partir de este gráfico podemos concluir, nuevamente, que la variable **Model** no aporta información significativa ni representa ninguna relación clara con respecto al precio, por este motivo decidimos eliminar esta variable y análizar el modelo sin ella.
+
+```{r, echo=FALSE}
+modelo <- lm(Price~.-Model, data = Datos)
+summary(modelo)
+```
+
+Del summary observamos que la única variable que aparece como significativa es **Warranty2** ya que tiene un valor p menor que el nivel de significancia 0,05.
+
+El R cuadrado ajustado da un valor de -0.001294, lo que significa que el modelo no es bueno ni apropiado, porque las variables regresoras no explican el comportamiento de la variable respuesta.
+
+Dado que nuestro objetivo es identificar cuáles son las variables cualitativas o cuantitativas que más influyen en el precio, procedemos a hacer un análisis más exhaustivo, comenzando con las variables cualitativas, observando los gráficos de precio vs variables cualitativas.
+
+### Análisis de las variables cualitativas
+
+**Marca VS Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Brand, y = Price, fill = Brand)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("Dell" = "blue", "Asus" = "green", 
+                               "HP" = "pink", "Acer" = "yellow", 
+                               "Lenovo" = "coral", "MSI" = "lightgoldenrod", 
+                               "Other" = "lightgray")) +
+  labs(title = "Marca vs Precio", 
+       x = "Marca", y = "Precio") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**Procesador vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Processor, y = Price, fill = Processor)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("Intel i7" = "lightblue", "Intel i5" = "violet", "Intel i9"= "brown", "AMD Ryzen 5" = "lightgreen", "AMD Ryzen 9"= "lightpink", "AMD Ryzen 7"= "yellow", "Other" = "lightgray")) +
+  labs(title = "Processor vs Price", 
+       x = "Processor", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**Tarjeta gráfica vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Graphics_Card, y = Price, fill = Graphics_Card)) +
+  geom_boxplot() +
+  labs(title = "Graphics Card vs Price", x = "Graphics Card", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**Sistema operativo vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Operating_System, y = Price, fill = Operating_System)) +
+  geom_boxplot() +
+  labs(title = "Operating System vs Price", x = "Operating System", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**RAM vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = RAM, y = Price, fill = RAM)) +
+  geom_boxplot() +
+  labs(title = "RAM vs Price", x = "RAM", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**Almacenamiento vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Storage, y = Price, fill = Storage)) +
+  geom_boxplot() +
+  labs(title = "Storage vs Price", x = "Storage", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+
+```
+
+**Tamaño pantalla vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Screen_Size, y = Price, fill = Screen_Size)) +
+  geom_boxplot() +
+  labs(title = "Screen Size vs Price", x = "Screen Size", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+**Garantía vs Precio**
+
+```{r, echo=FALSE}
+ggplot(Datos, aes(x = Warranty, y = Price, fill = Warranty)) +
+  geom_boxplot() +
+  labs(title = "Warranty vs Price", x = "Warranty", y = "Price") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+De acuerdo a cada uno de los gráficos de la variable precio vs las variables cualitativas, podemos afirmar que no existe una variable cualitativa que sea significativa, pues sus medias están todas en un rango similar y no varían respecto al Precio de los computadores portátiles.
+
+### Análisis de variables cuantitativas
+
+```{r, echo=FALSE}
+var_cuanti <- subset(Datos, select = c("Weight", "Battery_Life", "Price"))
+modelo_cuanti <- lm(Price ~ ., data = var_cuanti)
+summary(modelo_cuanti)
+```
+
+En promedio, por cada kilogramo adicional de peso, el precio disminuiría en 8.71 unidades monetarias; sin embargo, este efecto no es significativo porque el valor p = 0,629. Del mismo modo, cada hora adicional de duración de la batería reduciría el precio en 1.91 unidades monetarias, pero este efecto tampoco es significativo porque el valor p = 0,617. En conclusión, podemos afirmar que ninguna de las variables resulta significativa, ya que sus valores p son mayores al nivel de significancia establecido (0,05).
+
+```{r, echo=FALSE}
+library(ggplot2)
+ggpairs(var_cuanti,
+        upper = list(continuous = wrap("cor", size = 4, colour = "black")),
+        lower = list(continuous = wrap("points", colour = "lightgreen", alpha = 0.7)),
+        diag = list(continuous = wrap("barDiag", fill = "lightblue", colour = "blue")))
+```
+
+```{r, echo=FALSE}
+ggcorr(var_cuanti)
+```
+
+De acuerdo a las dos gráficas anteriores podemos confirmar que las variables "Peso" y "Duración de la Batería" no tienen una relación evidente con el precio de los computadores portátiles, validando así nuestra conclusión anterior del summary de modelo de las variables cuantitativas.
+
+### Análisis de multicolinealidad de las variables cuantitativas
+
+```{r, echo=FALSE}
+modelo_cuanti <- lm(Price ~ ., data = var_cuanti)
+vif(modelo_cuanti)
+```
+
+Según los valores dados, no hay problemas de multicolinealidad, pero tampoco hay correlación entre la variable respuesta y las variables cuantitativas regresoras.
+
+```{r, echo=FALSE}
+var_cuali <- subset(Datos, select=c("Brand","Processor","Graphics_Card",
+                                    "Operating_System","RAM","Storage",
+                                    "Screen_Size","Warranty","Price"))
+Anova <- aov(Price ~., data = var_cuali)
+summary(Anova)
+
+```
+
+Según los resultados del ANOVA, ningún valor p es menor que el nivel de significancia (0,05). Esto sugiere que las variables consideradas no tienen un impacto estadísticamente significativo en la variable respuesta, por lo cual, podemos concluir que según los valores obtenidos, no se presentan problemas de multicolinealidad en el modelo.
+
+## Creación de modelos
+
+Para cada modelo realizaremos pruebas estadísticas y gráficas, para verificar si son estadísticamente válidos. Las pruebas serán de Normalidad, Homocesdasticidad y, finalmente de independencia.
+
+Si los modelos fallan en alguna de las pruebas de validación estadística, analizaremos los puntos outliers o puntos de influencia, para decidir su posible eliminación de la base de datos, con la intención de mejorar la significancia y validez de los modelos. Esto con el fin de lograr explicar que el precio de los computadores potátiles varía según algunas características técnicas y de diseño.
+
+### Modelo 1
+
+Para el primer modelo, decidimos inicialmente tomar las variables que tenían un número más grande en el nivel de correlación con respecto a la variable respuesta (Precio).
+
+Para este modelo vamos a utilizar las variables Storage, RAM, Processor y Brand, contra la variable Price.
+
+```{r, echo=FALSE}
+modelo1 <- lm(Price ~ Storage + RAM + Processor+ Brand,
+              data=Datos)
+summary(modelo1)
+
+```
+
+De la creación del modelo 1 obtuvimos un R cuadrado ajustado negativo = -0,001808 lo que nos indica que las variables Storage, RAM, Processor y Brand no explican el comportamiento de la variable **Price**, es decir, el precio de los computadores portátiles no se ve influenciado por estas variables.
+
+**Análisis de normalidad del modelo 1**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo1)
+shapiro.test(Residuales)
+```
+
+Según la prueba estadistica shapiro no hay normalidad, pues el valor p es menor al valor del alfa (0,05).
+
+```{r, echo=FALSE}
+Datos$Residuales <- rstandard(modelo1)
+library(car)
+qqPlot(Datos$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+Según la gráfica anterior no hay normalidad, pues esta sigue una distribución con colas delgadas, es decir, los puntos en las colas del gráfico se desvían significativamente de la línea diagonal, lo que sugiere que los residuales tienen una menor variabilidad en los extremos de la distribución.
+
+**Prueba de homocedasticidad o varianza constante modelo 1**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo1)
+```
+
+Según la prueba estadistica Breusch-Pagan no hay homocedasticidad, es decir, no hay varianza constante, pues el valor p es menor al nivel de significancia (0,05).
+
+```{r, echo=FALSE}
+Datos$Valores_Ajustados <- modelo1$fitted.values
+ggplot(Datos, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+```
+
+Según el gráfico podemos observar que el modelo tiene varianza constante, sin embargo, nos basaremos en los resultados de la prueba estadística. Por ende, concluimos que el modelo no es homocedastico.
+
+**Prueba de independencia modelo 1**
+
+```{r, echo=FALSE}
+dwtest(modelo1)
+```
+
+Según la prueba Durbin Watson el modelo tiene independencia.
+
+```{r, echo=FALSE}
+bgtest(modelo1)
+```
+
+Según la prueba Breusch–Godfrey el modelo tiene independencia.
+
+```{r, echo=FALSE}
+Datos$Id <- seq(1,nrow(Datos))
+ggplot(Datos, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+```
+
+Según el gráfico el modelo tiene independencia, es decir, no se encuentra ningún patrón característico como ciclos o tendencias, por ende los residuales están aleatoriamente distribuidos alrededor del cero.
+
+#### Transformación del modelo1: Análisis y detección de outliers y puntos de influencia
+
+```{r, echo=FALSE}
+plot(Datos$Price,Residuales)
+```
+
+Observando el gráfico anterior, no es posible ver a simple vista si tenemos outliers o puntos de influencia.
+
+**Distancia de cook**
+
+```{r, echo=FALSE}
+f_alpha <- qf(1-0.05, df1 = 5, df2 = 3000 - 5)
+f_alpha
+```
+
+Según el criterio de la distacia de cook, debemos buscar un valor mayor al f_alpha = 2,217085.
+
+**Criterio DFFITS**
+
+```{r, echo=FALSE}
+Criteriodf <- 2*(sqrt(5/3000))
+Criteriodf
+```
+
+Según el criterio de los DFFITS debemos buscar un valor mayor a 0,08164966.
+
+**Criterio DFBETAS**
+
+```{r, echo=FALSE}
+criteriodfb<- 2/(sqrt(3000))
+criteriodfb
+```
+
+Según el criterio de los DFBETAS debemos buscar un valor mayor a 0,03651484.
+
+**Tabla de influencias** Aquí encontraremos los puntos de influencia u outliers que nos permite ver el programa r-studio (alrededor de 1000) de acuerdo a los tres cristerios a los que posteriormente evaluaremos su posible eliminación de la base de datos.
+
+Para los tres criterios tenemos que: - Distancia de cook: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero. - DFFITS: Para este criterio, se decidieron eliminar los puntos mayores a 0,1; de los datos analizados 243 cumplieron con esto. - DFBETA: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero.
+
+**Creación del nuevo modelo sin los puntos eliminados bajo los criterios**
+
+```{r, echo=FALSE}
+Datos1<-Datos[-c(6,8,10,11,14,17,19,25,27,28,33,34,35,40,41,47,52,66,68,71,
+                 72,73,75,83,84,86,103,106,118,121,125,129,131,133,137,139,
+                 149,157,161,162,163,168,170,174,175,176,177,183,185,188,192,
+                 197,203,204,206,210,211,213,214,216,217,220,225,226,229,231,
+                 234,235,241,250,251,253,258,265,271,280,285,287,289,295,296,
+                 299,300,303,314,316,318,326,331,332,352,356,357,369,362,365,
+                 369,370,376,377,382,384,392,394,396,400,401,403,404,410,411,412,425,
+                 428,430,431,433,442,449,462,465,467,468,472,473,474,477,480,487,489,494,496,501,
+                 505,508,513,516,518,19,525,526,527,528,529,533,535,543,544,546,
+                 549,556,559,567,568,574,577,581,595,596,604,609,610,611,612,622,
+                 626,627,634,637,639,644,650,651,655,663,664,665,669,670,673,
+                 676,679,684,686,692,696,704,708,709,710,716,722,724,731,738,
+                 740,742,744,754,762,766,773,775,778,781,782,783,785,790,791,
+                 797,798,799,801,818,822,826,828,831,833,836,838,840,841,847,849,
+                 852,857,858,860,864,867,874,878,896,898,900,901,92,907,907,
+                 911,913),]
+
+
+modelo1.1 <- lm(Price ~ Storage + RAM + Processor+ Brand,
+                data=Datos1)
+summary(modelo1.1)
+
+```
+
+Del resumen del modelo sin los puntos eliminados anteriormente podemos observar que el R cuadrado ajustado del modelo pasó de negativo a positivo, sin embargo sigue siendo un valor muy pequeño que no explica el comportamiento de la variable respuesta.
+
+Ahora, nuevamente realizaremos las pruebas de normalidad, homocedasticidad e independencia para ver si mejoró la validez del modelo.
+
+**Normalidad modelo 1.1**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo1.1)
+shapiro.test(Residuales)
+```
+
+```{r, echo=FALSE}
+Datos1$Residuales <- rstandard(modelo1.1)
+library(car)
+qqPlot(Datos1$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+De acuerdo al gráfico y a la prueba estadística, el modelo sigue sin presentar normalidad, aunque ya se hayan eliminado puntos de influencia.
+
+**Homocedasticidad modelo 1.1**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo1.1)
+```
+
+```{r, echo=FALSE}
+Datos1$Valores_Ajustados <- modelo1.1$fitted.values
+ggplot(Datos1, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+```
+
+Según la prueba estadística y el gráfico el modelo sigue sin tener homocedasticidad o varianza constante.
+
+**Independencia modelo 1.1**
+
+```{r, echo=FALSE}
+dwtest(modelo1.1)
+bgtest(modelo1.1)
+```
+
+```{r, echo=FALSE}
+Datos1$Id <- seq(1,nrow(Datos1))
+ggplot(Datos1, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+
+```
+
+Según las pruebas estadísticas y el gráfico, el modelo conserva la independencia.
+
+Teniendo en cuenta que se le hizo una transformación al modelo, eliminando bastantes puntos de influencia, el modelo sigue sin tener normalidad y varianza constante, y un R cuadrado ajustado aunque positivo pero muy pequeño podemos concluir que el modelo no sirve para hacer una predicción del precio de acuerdo a sus características físicas y de diseño.
+
+### Modelo 2
+
+Probando eliminando variables nos dimos cuenta que el R cuadrado ajustado daba menos negativo que el primer modelo, por ende, decidimos trabajar con menos variables con la intención de buscar un R cuadrado ajustado mayor y positivo, y en base a esto se planteó el siguiente modelo con las variables Warranty, Operating System y Storage vs la variable Price:
+
+```{r, echo=FALSE}
+modelo2 <- lm(Price ~ Warranty + Operating_System + Storage, data=Datos)
+summary(modelo2)
+```
+
+Del summary del modelo 2, podemos observar un R cuadrado ajustado positivo = 0.00181, lo que nos indica que las variables Warranty, Operating System y Storage no explican el comportamiento de la variable **Price**, es decir, el precio de los computadores portátiles no se ve influenciado en mayor escala por estas variables.
+
+**Análisis de normalidad del modelo 2**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo2)
+shapiro.test(Residuales)
+```
+
+Según la prueba estadistica shapiro no hay normalidad, pues el valor p es menor al valor del alfa (0,05).
+
+```{r, echo=FALSE}
+Datos$Residuales <- rstandard(modelo2)
+library(car)
+qqPlot(Datos$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+Según la gráfica anterior no hay normalidad, pues esta sigue una distribución con colas delgadas, es decir, los puntos en las colas del gráfico se desvían significativamente de la línea diagonal, lo que sugiere que los residuales tienen una menor variabilidad en los extremos de la distribución.
+
+**Análisis de homocedasticidad del modelo 2**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo2)
+```
+
+Según la prueba estadística Breusch-Pagan hay homocedasticidad, es decir el modelo presenta varianza constante pues el valor p es mayor que el nivel de significancia (0,05).
+
+```{r, echo=FALSE}
+Datos$Valores_Ajustados <- modelo2$fitted.values
+ggplot(Datos, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+```
+
+Según el gráfico podemos observar que el modelo tiene varianza constante, lo que apoya el resultado de la prueba estadística, por ende concluimos que el modelo es homocedastico.
+
+**Análisis de independencia del modelo 2**
+
+```{r, echo=FALSE}
+dwtest(modelo2)
+```
+
+Según la prueba de Durbin Watson el modelo tiene independencia dado que el valor p = 0.05716 es mayor que el el nivel de significancia.
+
+```{r, echo=FALSE}
+bgtest(modelo2)
+```
+
+Según la prueba de Breusch-Godfrey el modelo tiene independencia dado que el valor p = 0.1185 es mayor que el el nivel de significancia.
+
+```{r, echo=FALSE}
+Datos$Id <- seq(1,nrow(Datos))
+ggplot(Datos, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+```
+
+Según el gráfico el modelo tiene independencia, es decir, no se encuentra ningún patrón característico como ciclos o tendencias, por ende los residuales están aleatoriamente distribuidos alrededor del cero.
+
+#### Transformación del modelo2: Análisis y detección de outliers y puntos de influencia
+
+```{r, echo=FALSE}
+plot(Datos$Price,Residuales)
+```
+
+Observando el gráfico anterior, no es posible ver a simple vista si tenemos outliers o puntos de influencia.
+
+**Distancia de cook**
+
+```{r, echo=FALSE}
+f_alpha <- qf(1-0.05, df1 = 4, df2 = 3000 - 4)
+f_alpha
+```
+
+Según el criterio de la distancia de cook debemos buscar un valor mayor a 2,374898
+
+**Criterio DFFITS**
+
+```{r, echo=FALSE}
+Criteriodf <- 2*(sqrt(4/3000))
+Criteriodf
+```
+
+Según el criterio de los DFFITS debemos buscar un valor mayor a 0,07302967.
+
+**Criterio DFBETAS**
+
+```{r, echo=FALSE}
+criteriodfb<- 2/(sqrt(3000))
+criteriodfb
+```
+
+Según el criterio de los DFBETAS debemos buscar un valor mayor a 0,03651484.
+
+**Tabla de influencias** Aquí encontraremos los puntos de influencia u outliers que nos permite ver el programa r-studio (alrededor de 900) de acuerdo a los tres cristerios a los que posteriormente evaluaremos su posible eliminación de la base de datos.
+
+Para los tres criterios tenemos que: - Distancia de cook: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero. - DFFITS: Para este criterio, se decidieron eliminar los puntos mayores a 0,08; de los datos analizados 112 cumplieron con esto. - DFBETA: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero.
+
+**Creación del nuevo modelo sin los puntos eliminados bajo los criterios**
+
+```{r, echo=FALSE}
+Datos2<-Datos[-c(14, 17,19, 25,34, 35, 41, 52, 66, 71, 72, 73, 75, 84, 103,
+                 106, 121, 125, 133, 137, 149, 157, 162, 174, 177, 188, 192,
+                 204, 210, 213, 214, 217, 225, 226, 235, 241, 253, 258, 271,
+                 280, 285, 296, 300, 316, 318, 326, 331, 332, 356, 365, 376, 
+                 377, 382, 392, 394, 396, 400, 401, 410, 411, 430, 431, 449, 
+                 468, 474, 480, 487, 489, 494, 496, 501, 505, 513, 518, 519,
+                 525, 527, 533, 544, 546, 549, 556, 567, 581, 588, 595, 610,
+                 612, 622, 637, 644, 655, 663, 669, 673, 710, 711, 722, 738,
+                 742, 766, 773, 775, 781, 782, 783, 785, 790, 818, 822, 826,
+                 828),]
+
+modelo2.1 <- lm(Price~Warranty+Operating_System+Storage, data=Datos2)
+summary(modelo2.1)
+```
+
+Del resumen del modelo sin los puntos eliminados anteriormente podemos observar que el R cuadrado ajustado aumentó de 0,00181 a 0,002254, aunque el R cuadrado ajustado se volvió mayor sigue siendo un valor muy pequeño que no explica el comportamiento de la variable respuesta respecto a las variables Warranty, Operating System y Storage.
+
+Ahora, nuevamente realizaremos las pruebas de normalidad, homocedasticidad e independencia para ver si mejoró la validez del modelo.
+
+**Análisis de normalidad del modelo 2.1**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo2.1)
+shapiro.test(Residuales)
+```
+
+```{r, echo=FALSE}
+Datos2$Residuales <- rstandard(modelo2.1)
+library(car)
+qqPlot(Datos2$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+De acuerdo al gráfico y a la prueba estadística el modelo sigue sin presentar normalidad aunque ya se han eliminado los DFFITS correspondientes.
+
+**Análisis de homocedasticidad del modelo 2.1**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo2.1)
+```
+
+```{r, echo=FALSE}
+Datos2$Valores_Ajustados <- modelo2.1$fitted.values
+ggplot(Datos2, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+```
+
+A diferencia del modelo1 y del modelo1.1, este nuevo modelo según la prueba estadística y el gráfico si tiene varianza constante.
+
+**Análisis de independencia del modelo 2.1**
+
+```{r, echo=FALSE}
+dwtest(modelo2.1)
+bgtest(modelo2.1)
+```
+
+Según las pruebas estadísticas y gráfica el modelo conserva la independencia, pues el valor p de Durbin es igual a 0,03308 y el valor p de Godfrey es igual a 0,06878, siendo ambos valores mayores que el nivel de significancia 0,05.
+
+```{r, echo=FALSE}
+Datos2$Id <- seq(1,nrow(Datos2))
+ggplot(Datos2, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+```
+
+Teniendo en cuenta que se le hizo una transformación al modelo, eliminando bastantes puntos de influencia, el modelo sigue sin tener normalidad, y un R cuadrado ajustado aunque positivo bastante pequeño, por lo que podemos concluir que el modelo no sirve para hacer una predicción del precio de los computadores portátiles de acuerdo a sus características físicas y de diseño.
+
+### Modelo 3
+
+Viendo la mejora que obtuvimos en el modelo 2 en el R cuadrado ajustado trabajando con menos variables, para nuestro último modelo decidimos trabajar solo con 2 variables Warranty y Operating System vs la variable Price, obteniendo el siguiente modelo:
+
+```{r, echo=FALSE}
+modelo3 <- lm(Price~Warranty+Operating_System, data=Datos)
+summary(modelo3)
+```
+
+Del summary del modelo 3, podemos observar un R cuadrado ajustado positivo = 0,001948, que aunque es un poco mayor que el valor del modelo 2, sigue indicando que las variables Warranty y Operating System no explican el comportamiento de la variable **Price**, es decir, el precio de los computadores portátiles no se ve influenciado en mayor escala por estas variables.
+
+**Análisis de normalidad del modelo 3**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo3)
+shapiro.test(Residuales)
+```
+
+Según la prueba estadistica shapiro no hay normalidad, pues el valor p es muchísimo menor que el valor del alfa (0,05).
+
+```{r, echo=FALSE}
+Datos$Residuales <- rstandard(modelo3)
+library(car)
+qqPlot(Datos$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+Según la gráfica anterior no hay normalidad, pues esta sigue una distribución con colas delgadas, es decir, los puntos en las colas del gráfico se desvían significativamente de la línea diagonal, lo que sugiere que los residuales tienen una menor variabilidad en los extremos de la distribución.
+
+Este patrón se repite en las gráficas de los modelos anteriores.
+
+**Análisis de homocedasticidad del modelo 3**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo3)
+```
+
+Según la prueba de Breusch-Pagan el modelo si cuenta con homocedasticidad, es decir, que el modelo tiene varianza constante pues el valor p de la prueba estadística es igual a 0,5361, lo que es mayor al nivel de significancia 0,05.
+
+```{r, echo=FALSE}
+Datos$Valores_Ajustados <- modelo3$fitted.values
+ggplot(Datos, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+
+```
+
+Según el gráfico podemos observar que el modelo tiene varianza constante, lo que confirma la prueba estadística anterior. Por tanto podemos concluir que el modelo es homocedastico.
+
+**Análisis de independencia del modelo 3**
+
+```{r, echo=FALSE}
+dwtest(modelo3)
+bgtest(modelo3)
+```
+
+Según las dos pruebas podemos concluir que el modelo tiene independencia, pues los valores p son mayores que el nivel de significancia.
+
+```{r, echo=FALSE}
+Datos$Id <- seq(1,nrow(Datos))
+ggplot(Datos, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+```
+
+Según el gráfico el modelo tiene independencia, es decir, no se encuentra ningún patrón característico como ciclos o tendencias, por ende los residuales están aleatoriamente distribuidos alrededor del cero; lo que confirman las dos pruebas estadísticas anteriores.
+
+#### Transformación del modelo3: Análisis y detección de outliers y puntos de influencia
+
+```{r, echo=FALSE}
+plot(Datos$Price,Residuales)
+```
+
+Observando el gráfico anterior, no es posible ver a simple vista si tenemos outliers o puntos de influencia, de hecho todos los puntos se observan muy uniformes.
+
+**Distancia de cook**
+
+```{r, echo=FALSE}
+f_alpha <- qf(1-0.05, df1 = 3, df2 = 3000 - 3)
+f_alpha
+```
+
+Según el criterio de la distacia de cook, debemos buscar un valor mayor al f_alpha = 2,607873.
+
+**Criterio DFFITS**
+
+```{r, echo=FALSE}
+Criteriodf <- 2*(sqrt(3/3000))
+Criteriodf
+```
+
+Según el criterio de los DFFITS debemos buscar un valor mayor a 0,06324555.
+
+**Criterio DFBETAS**
+
+```{r, echo=FALSE}
+criteriodfb<- 2/(sqrt(3000))
+criteriodfb
+```
+
+Según el criterio de los DFBETAS debemos buscar un valor mayor a 0,03651484.
+
+**Tabla de influencias** Aquí encontraremos los puntos de influencia u outliers que nos permite ver el programa r-studio (alrededor de 90) de acuerdo a los tres cristerios a los que posteriormente evaluaremos su posible eliminación de la base de datos.
+
+Para los tres criterios tenemos que: - Distancia de cook: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero. - DFFITS: Para este criterio, se decidieron eliminar los puntos mayores al criterio; de los datos analizados 16 cumplieron con esto. - DFBETA: Ningún valor fue mayor que este criterio, pues estos estaban muy cercanos al cero.
+
+**Creación del nuevo modelo sin los puntos eliminados bajo los criterios**
+
+```{r, echo=FALSE}
+Datos3<-Datos[-c(6, 14, 17, 19, 25, 34, 35, 41, 52, 66, 71, 72, 73, 75, 84, 86),]
+
+modelo3.1 <- lm(Price~Warranty+Operating_System, data=Datos3)
+summary(modelo3.1)
+
+```
+
+Del resumen del modelo sin los puntos eliminados anteriormente podemos observar que el R cuadrado ajustado del modelo disminuyó 0,00032. Esto se puede deber a que solamente son dos variables contra el precio y al eliminar estos datos le quitamos información que si era valiosa para la explicación del modelo.
+
+Ahora, nuevamente realizaremos las pruebas de normalidad, homocedasticidad e independencia para ver si mejoró la validez del modelo.
+
+**Análisis de normalidad del modelo 3.1**
+
+```{r, echo=FALSE}
+Residuales <- rstandard(modelo3.1)
+shapiro.test(Residuales)
+```
+
+```{r, echo=FALSE}
+Datos3$Residuales <- rstandard(modelo3.1)
+library(car)
+qqPlot(Datos3$Residuales, xlab= "Cuantiles de distribucion normal",
+       ylab= "cuantiles de residules", pch= 16, col= "pink",
+       col.lines = "orange")
+```
+
+De acuerdo al gráfico y a la prueba estadística de Shapiro el modelo sigue sin presentar normalidad.
+
+**Análisis de homocedasticidad del modelo 3.1**
+
+```{r, echo=FALSE}
+library(lmtest)
+bptest(modelo3.1)
+```
+
+```{r, echo=FALSE}
+Datos3$Valores_Ajustados <- modelo3.1$fitted.values
+ggplot(Datos3, aes(x= Valores_Ajustados, y=Residuales)) +
+  geom_point(color= "brown", size= 2) +
+  geom_hline(yintercept = c(-3.5,0,3.5), linetype= "dotted",
+             color="black", size=1)
+```
+
+Según la prueba estádistica y el gráfico, el modelo tiene varianza constante. Pues el valor p es mayor al nivel de significancia.
+
+**Análisis de independencia del modelo 3.1**
+
+```{r, echo=FALSE}
+dwtest(modelo3.1)
+bgtest(modelo3.1)
+```
+
+```{r, echo=FALSE}
+Datos3$Id <- seq(1,nrow(Datos3))
+ggplot(Datos3, aes(x=Id, y=Residuales))+
+  geom_point(color="black", size=2)+
+  geom_hline(yintercept=c(-3.5,0,3.5), linetype="dotted",
+             color="red", size=1)
+
+```
+
+Aunque la prueba de Durbin no arroja independencia su valor p es muy cercano al nivel de significancia, y teniendo en cuenta que la prueba de Godfrey y el gráfico confirman independencia, concluimos que el modelo 3.1 si conserva independencia.
+
+Teniendo en cuenta que se le hizo una transformación al modelo, eliminando unos puntos de influencia, el modelo sigue sin tener normalidad y un R cuadrado ajustado aunque positivo pero muy pequeño podemos concluir que el modelo no sirve para hacer una predicción del precio de acuerdo a sus características físicas y de diseño, pues no cumple con los tres criterios para ser un modelo estadísticamente válido.
+
+## Conclusiones
+
+En el desarrollo de este análisis, se buscó construir un modelo de regresión lineal múltiple que permitiera predecir el precio de los computadores portátiles en función de sus características técnicas y de diseño que mas influyeran en el precio de estos. Sin embargo, los resultados obtenidos indicaron que no fue posible ajustar un modelo con un coeficiente de determinación ajustado superior a 0.3%, lo cual sugiere que las variables consideradas no explican de manera significativa la variación en el precio de los computadores portátiles.
+
+Este resultado desalentador es debido a que la base de datos usada para crear los modelos es muy pareja, es decir, las medias de las variables respecto al precio de los computadores portátiles son muy uniformes, por tanto el precio de los computadores oscilaban entre el mismo rango, sin mostrar variaciones significativas que nos permitieran encontrar una variable cuantitativa o cualitativa que explicara el cambio en el precio de los computadores portátiles ni hacer un modelo que predijera el comportamiento de su valor monetario.
